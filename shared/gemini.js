@@ -43,7 +43,8 @@ export function createGeminiClient(fetcher = (...args) => fetch(...args)) {
     async translate(apiKey, model, task, signal) {
       if (!validModel(model)) throw new Error('Choose a valid text model in Settings.');
       const body = await request(`models/${model}:generateContent`, apiKey, {method: 'POST', body: JSON.stringify(buildPayload(task)), signal});
-      return {text: parseTranslation(body), tokens: body.usageMetadata?.totalTokenCount || 0};
+      const count = body.usageMetadata?.totalTokenCount;
+      return {text: parseTranslation(body), tokens: Number.isFinite(count) && count >= 0 ? count : null};
     }
   };
 }

@@ -26,7 +26,8 @@
     button:hover { background:var(--tint); }
     button:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible { outline:2px solid #9b95ff; outline-offset:-3px; }
     button:disabled { cursor:wait; opacity:.6; }
-    .launcher { display:flex; align-items:center; gap:0; padding:4px; }
+    .launcher { display:flex; align-items:center; gap:0; padding:3px; }
+    .launcher button { padding:5px 8px; font-size:12px; line-height:1.4; border-radius:5px; }
     .primary { color:#fff; background:#6257e8; font-weight:600; }
     .primary:hover { background:#756af5; }
     .arrow { margin-left:3px; border-left:1px solid var(--line); }
@@ -36,16 +37,18 @@
     .wide { width:100%; text-align:left; }
     .hint { margin:6px 0; font-size:12px; color:var(--muted); }
     .result { width:390px; max-width:calc(100vw - 18px); }
-    .heading { display:flex; align-items:center; justify-content:space-between; padding:9px 14px; border-bottom:1px solid var(--line); }
-    .brand { color:#b9b4ff; font-size:12px; font-weight:700; letter-spacing:.03em; }
+    .heading { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 10px; border-bottom:1px solid var(--line); }
+    .heading-title { display:flex; align-items:baseline; gap:7px; min-width:0; white-space:nowrap; }
+    .heading button { padding:4px 7px; flex-shrink:0; }
+    .brand { color:#b9b4ff; font-size:11px; font-weight:700; letter-spacing:.01em; }
     .light .brand { color:#5146bd; }
-    h2 { font-size:14px; margin:0; font-weight:600; }
+    h2 { font-size:11px; margin:0; font-weight:500; overflow:hidden; text-overflow:ellipsis; }
     .body { padding:15px; max-height:min(420px,55vh); overflow:auto; overflow-wrap:anywhere; }
     .output { margin:0; white-space:pre-wrap; unicode-bidi:plaintext; }
     .error { color:#ffb9b9; }
     .light .error { color:#a62929; }
     .footer { display:flex; flex-wrap:wrap; gap:4px; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding:7px 9px; }
-    .meta { color:var(--muted); font-size:11px; padding:0 6px; max-width:245px; overflow-wrap:anywhere; }
+    .meta { color:var(--muted); font-size:11px; line-height:1.5; padding:0 4px; flex:1; min-width:150px; overflow-wrap:anywhere; }
     details { font-size:12px; color:var(--muted); margin-top:14px; }
     summary { cursor:pointer; }
     .source { white-space:pre-wrap; unicode-bidi:plaintext; max-height:140px; overflow:auto; margin:8px 0 0; }
@@ -73,7 +76,7 @@
         <button id="settings-menu" class="wide">Settings</button>
       </div>
       <section id="result" class="result" aria-label="MetaFrasi result" hidden>
-        <div class="heading"><div><div class="brand">MetaFrasi</div><h2 id="title">Translation</h2></div><button id="close-result" aria-label="Close MetaFrasi">×</button></div>
+        <div class="heading"><div class="heading-title"><span class="brand">MetaFrasi</span><h2 id="title">Translation</h2></div><button id="close-result" aria-label="Close MetaFrasi">×</button></div>
         <div class="body"><p id="output" class="output" role="status" aria-live="polite" dir="auto"></p>
           <details id="original"><summary>Original text</summary><p id="source" class="source" dir="auto"></p></details>
         </div>
@@ -140,6 +143,7 @@
     $('output').classList.remove('error');
     $('output').textContent = mode === 'summary' ? 'Summarizing and translating…' : 'Translating…';
     $('meta').textContent = 'Sending selected text to Google';
+    $('meta').removeAttribute('title');
     $('copy').hidden = true; $('copy').textContent = 'Copy'; $('back').hidden = true; $('setup').hidden = true;
     position();
     if (!settings.configured) return showError(new Error('Connect your own Gemini API key in Settings to start translating.'));
@@ -151,7 +155,11 @@
       if (pendingId !== requestId || host.hidden) return;
       resultText = result.text;
       $('output').textContent = result.text;
-      $('meta').textContent = result.cached ? 'From temporary cache' : `${(result.elapsed / 1000).toFixed(1)}s · ${result.model}`;
+      const tokens = Number.isFinite(result.tokens) && result.tokens >= 0 ? `${result.tokens} tokens` : 'tokens unavailable';
+      $('meta').textContent = result.cached
+        ? `0 ms · ${result.model} · 0 tokens (cache)`
+        : `${Math.round(result.elapsed)} ms · ${result.model} · ${tokens}`;
+      $('meta').title = result.cached ? `No new API request. Original request: ${tokens}.` : 'Total tokens reported by Google for this request.';
       $('copy').hidden = false; $('back').hidden = false;
     } catch (error) {
       if (pendingId === requestId && !host.hidden) showError(error);

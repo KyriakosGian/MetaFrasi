@@ -86,7 +86,8 @@ try {
       });
       if(state.mode==='quota')return new Response('{}',{status:429});
       const prompt=JSON.parse(options.body).systemInstruction.parts[0].text;
-      const text=state.mode==='html'?'<img src=x onerror=alert(1)>':prompt.includes('Summarize the supplied')?'Eine kurze Zusammenfassung in der Zielsprache.':'Η ανάγνωση αναδεικνύει νέες ιδέες. Η μετάφραση διατηρεί το νόημα και τις σημαντικές λεπτομέρειες.';
+      const source=JSON.parse(JSON.parse(options.body).contents[0].parts[0].text).sourceText;
+      const text=state.mode==='echo'?source:state.mode==='html'?'<img src=x onerror=alert(1)>':prompt.includes('Summarize the supplied')?'Eine kurze Zusammenfassung in der Zielsprache.':'Η ανάγνωση αναδεικνύει νέες ιδέες. Η μετάφραση διατηρεί το νόημα και τις σημαντικές λεπτομέρειες.';
       return new Response(JSON.stringify({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({text})}]}}],usageMetadata:{totalTokenCount:30}}),{status:200});
     };
   });
@@ -104,16 +105,19 @@ try {
     await page.locator('#passage').dblclick({position:{x:35,y:16}});
     await poll(()=>ui('#translate',function(){return this.textContent.includes('Greek');}),'Missing default-language button');
     assert.equal(await worker.evaluate(()=>__test.calls.length),before);
+    await page.screenshot({path:path.join(artifacts,'compact-button.png')});
   });
   await test('full translation, plain-text result, caching and close',async()=>{
     await selectPassage();await click('#translate');
     await poll(()=>ui('#copy',function(){return !this.hidden;}),'Translation did not finish');
     assert.match(await ui('#output',function(){return this.textContent;}),/Η ανάγνωση/);
+    assert.match(await ui('#meta',function(){return this.textContent;}),/^\d+ ms · gemini-3\.5-flash-lite · 30 tokens$/);
     const position=await ui(':host',function(){const b=this.getBoundingClientRect();return {left:b.left,top:b.top};});
     assert.ok(position.left>200&&position.top>100,'The result should be anchored beside the selected passage, not at the viewport origin.');
     await page.screenshot({path:path.join(artifacts,'translation.png')});
     await click('#back');await click('#translate');
     await poll(()=>ui('#meta',function(){return this.textContent.includes('cache');}),'Cache did not serve repeated request');
+    assert.match(await ui('#meta',function(){return this.textContent;}),/0 tokens \(cache\)/);
     await page.keyboard.press('Escape');assert.equal(await ui(':host',function(){return this.hidden;}),true);
   });
   await test('temporary language and summary preserve the saved default',async()=>{
@@ -131,6 +135,54 @@ try {
       await page.locator(selector).dblclick();await new Promise(resolve=>setTimeout(resolve,180));
       assert.notEqual(await ui(':host',function(){return !this.hidden;}),true,`Unexpected control in ${selector}`);
     }
+  });
+  await test('HTML bullets and nested indentation survive selection and plain-text rendering',async()=>{
+    await page.goto(origin+'/tests/fixtures/lists.html');await config({mode:'echo'});
+    await selectPassage('bullets');await click('#translate');
+    await poll(()=>ui('#copy',function(){return !this.hidden;}),'List result did not finish');
+    const output=await ui('#output',function(){return this.textContent;});
+    assert.match(output,/^• First item\./m);assert.match(output,/^  ◦ Nested first item\./m);
+    assert.match(output,/^  ◦ Nested second item\./m);assert.match(output,/^• Second item\./m);
+    assert.equal(/HIDDEN|Unselected/.test(output),false);
+    assert.equal(await ui('#output',function(){return this.children.length;}),0);
+    await page.screenshot({path:path.join(artifacts,'list-translation.png')});
+  });
+  await test('partial ordered selection retains original numbering without extra text',async()=>{
+    await page.goto(origin+'/tests/fixtures/lists.html');await config({mode:'echo'});
+    await page.evaluate(()=>{
+      const start=document.getElementById('ordered-start').firstChild,end=document.getElementById('ordered-end').firstChild;
+      const range=document.createRange();range.setStart(start,0);range.setEnd(end,end.length);
+      const selected=getSelection();selected.removeAllRanges();selected.addRange(range);
+      document.getElementById('ordered').dispatchEvent(new MouseEvent('mouseup',{bubbles:true,button:0}));
+    });
+    await poll(()=>ui(':host',function(){return !this.hidden;}),'No partial-list control');await click('#translate');
+    await poll(()=>ui('#copy',function(){return !this.hidden;}),'Ordered result did not finish');
+    assert.equal(await ui('#output',function(){return this.textContent;}),'5. Start here.\n9. Jump here.\n10. Continue here.');
+  });
+  await test('reversed, alphabetical, roman and mixed-block lists retain structure',async()=>{
+    await page.goto(origin+'/tests/fixtures/lists.html');await config({mode:'echo'});
+    for(const [id,expected] of [
+      ['reversed','7. Reverse first.\n6. Reverse second.'],
+      ['letters','B. Letter first.\nC. Letter second.'],
+      ['roman','iv. Roman first.\nv. Roman second.']
+    ]) {
+      await selectPassage(id);await click('#translate');await poll(()=>ui('#copy',function(){return !this.hidden;}),'Missing formatted list result');
+      assert.equal(await ui('#output',function(){return this.textContent;}),expected);await page.keyboard.press('Escape');
+    }
+    await selectPassage('mixed');await click('#translate');await poll(()=>ui('#copy',function(){return !this.hidden;}),'Missing mixed selection result');
+    const output=await ui('#output',function(){return this.textContent;});
+    assert.match(output,/A selected introduction\.\n/);assert.match(output,/^• A selected bullet\./m);assert.match(output,/\nA selected conclusion\.$/);
+    assert.equal(output.includes('Unselected'),false);
+  });
+  await test('a word selected inside a list stays a word without surrounding item text',async()=>{
+    await page.goto(origin+'/tests/fixtures/lists.html');await config({mode:'echo'});
+    await page.evaluate(()=>{
+      const item=document.getElementById('ordered-start'),range=document.createRange();range.setStart(item.firstChild,6);range.setEnd(item.firstChild,10);
+      const selected=getSelection();selected.removeAllRanges();selected.addRange(range);item.dispatchEvent(new MouseEvent('mouseup',{bubbles:true,button:0}));
+    });
+    await poll(()=>ui(':host',function(){return !this.hidden;}),'No word control');await click('#translate');
+    await poll(()=>ui('#copy',function(){return !this.hidden;}),'Missing word result');
+    assert.equal(await ui('#output',function(){return this.textContent;}),'here');
   });
   await test('model output cannot create markup in the page',async()=>{
     await config({mode:'html'});await selectPassage('second');await click('#translate');

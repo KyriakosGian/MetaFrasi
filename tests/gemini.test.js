@@ -39,3 +39,8 @@ test('network failure and aborted requests remain distinguishable', async () => 
   const controller=new AbortController(); controller.abort();
   await assert.rejects(client.translate('fake-key','gemini-3.5-flash-lite',task,controller.signal),/cancelled or timed out/);
 });
+test('missing token usage is reported as unknown rather than zero', async () => {
+  const client=createGeminiClient(async()=>({ok:true,json:async()=>({candidates:[{finishReason:'STOP',content:{parts:[{text:'{"text":"Result"}'}]}}]})}));
+  const result=await client.translate('fake-key','gemini-3.5-flash-lite',task);
+  assert.equal(result.tokens,null);
+});

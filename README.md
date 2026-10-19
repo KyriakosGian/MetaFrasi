@@ -2,7 +2,7 @@
 
 Translate the passage you are reading, or get a translated summary. A small, open-source Chrome extension using your own Google Gemini API key.
 
-Version **0.1.0**, initial testing release. English interface. Manifest V3. No runtime dependencies, developer-operated backend or analytics.
+Version **0.1.1**, testing release. English interface. Manifest V3. No runtime dependencies, developer-operated backend or analytics.
 
 [Website](https://kyriakosgian.github.io/MetaFrasi/) · [Releases](https://github.com/KyriakosGian/MetaFrasi/releases) · [Privacy](docs/privacy.html) · [Support](https://github.com/KyriakosGian/MetaFrasi/issues)
 
@@ -13,6 +13,8 @@ Version **0.1.0**, initial testing release. English interface. Manifest V3. No r
 - Choose another language for the current selection without changing your default.
 - Summarize and translate a longer passage in one action.
 - Keep the original passage visible on demand and copy the result.
+- Preserve list bullets, numbering and indentation when selecting HTML lists.
+- See elapsed milliseconds, the model and API-reported token usage below each result.
 - Connect your own Gemini key and discover compatible text models.
 - Choose dark, light or system appearance.
 - Pause the selection control and clear temporary results.
@@ -56,6 +58,8 @@ Only a deliberate Translate or Summarize action sends selected text to Google. T
 
 The service worker keeps up to 40 cached results for up to 20 minutes, with expiry checked on access. The cache disappears when the worker stops and is cleared on key or preference changes. No selected text is saved to disk by MetaFrasi.
 
+The result footer shows Google's total token count for a new request, including any usage Google includes in that total. A cached result shows zero new tokens because it does not make an API request. Hover over its footer to see the original request's usage. If Google omits usage data, the footer says that tokens are unavailable.
+
 ## Development
 
 Node.js 22 or later. No install step is needed for unit tests, checks, packaging or local website preview.
@@ -67,7 +71,7 @@ node scripts/package.mjs
 node scripts/preview.mjs
 ```
 
-`dist/metafrasi-0.1.0.zip` is an allowlisted extension package. Tests, development scripts and local artifacts are excluded. A SHA-256 file accompanies it.
+`dist/metafrasi-0.1.1.zip` is an allowlisted extension package. Tests, development scripts and local artifacts are excluded. A SHA-256 file accompanies it.
 
 Browser integration tests use Playwright with its Chromium browser in a temporary profile, fake credentials and mocked Gemini responses. They never use your personal Chrome profile or a real API key. Set `METAFRASI_PLAYWRIGHT` to an absolute installed Playwright package directory when it is not locally installed, then run:
 
@@ -87,7 +91,7 @@ node scripts/browser-test.mjs
 
 ## Publishing
 
-Push the repository to `KyriakosGian/MetaFrasi`. In GitHub Settings → Pages, choose **GitHub Actions**. The included Pages workflow publishes `docs/`. CI checks the project and builds an extension ZIP on pushes and pull requests. Tagging `v0.1.0` publishes a GitHub Release with the ZIP and checksum. See [release checklist](store-assets/SUBMISSION.md) before submitting to the Chrome Web Store.
+Push the repository to `KyriakosGian/MetaFrasi`. In GitHub Settings → Pages, choose **GitHub Actions**. The included Pages workflow publishes `docs/`. CI checks the project and builds an extension ZIP on pushes and pull requests. Tagging `v0.1.1` publishes a GitHub Release with the ZIP and checksum. See [release checklist](store-assets/SUBMISSION.md) before submitting to the Chrome Web Store.
 
 ## License and credits
 
