@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MetaFrasi Settings</title><link rel="icon" href="icons/icon32.png"><link rel="stylesheet" href="options.css">
+  <script type="module" src="options.js"></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="#api"><img src="icons/logo.svg" width="42" height="42" alt=""><span>MetaFrasi<small>AI READING ASSISTANT</small></span></a>
+    <nav aria-label="Settings sections">
+      <a href="#api" class="active">API Configuration</a><a href="#model">AI Model</a><a href="#translation">Translation</a><a href="#appearance">Appearance</a><a href="#privacy">Privacy &amp; Data</a>
+    </nav>
+    <div class="credits">Created by <a href="https://github.com/KyriakosGian" target="_blank" rel="noreferrer">KyriakosGian</a><br><a href="https://procreta.gr" target="_blank" rel="noreferrer">ProCreta.gr</a><span id="version">v0.1.0</span></div>
+  </aside>
+  <main>
+    <header class="page-header"><div><p class="eyebrow">YOUR WORDS. YOUR LANGUAGE.</p><h1>Make reading feel familiar.</h1><p>Connect once. Select text anywhere you read. Translate when you need it.</p></div><span class="pill">Chrome extension</span></header>
+    <div id="page-status" role="status" aria-live="polite"></div>
+    <section id="api" class="card" aria-labelledby="api-title">
+      <span class="card-icon" aria-hidden="true">⌘</span><div class="card-content">
+        <h2 id="api-title">Google Gemini API Key</h2><p>MetaFrasi connects directly to Google. There is no MetaFrasi server between you and your translation.</p>
+        <details class="guide"><summary>New here? Get your API key in three steps</summary><ol>
+          <li>Open <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Google AI Studio</a> and sign in to your Google account.</li>
+          <li>Create an API key for a Google project. To use the free tier, choose an eligible project without paid billing. Check availability and limits in AI Studio.</li>
+          <li>Copy the key, paste it below, and choose <strong>Connect &amp; save key</strong>.</li>
+        </ol><p>Your own paid key also works. Google determines availability, quotas and charges. MetaFrasi does not enable billing or switch models automatically.</p></details>
+        <form id="connect-form">
+          <label for="api-key">API KEY <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Get an API key ↗</a></label>
+          <div class="key-field"><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your Gemini API key" maxlength="256"><button type="button" id="reveal" aria-label="Show API key" aria-pressed="false">Show</button></div>
+          <p id="key-state" class="field-note">Your key stays in this browser profile. It is not synced.</p>
+          <label class="check"><input id="consent" type="checkbox" required><span>I understand that my selected text and target language are sent to Google when I request a translation or summary.</span></label>
+          <div class="actions"><button class="primary" id="connect" type="submit">Connect &amp; save key</button><button id="disconnect" type="button" class="subtle" hidden>Remove saved key</button></div>
+          <p id="connection-status" role="status" aria-live="polite"></p>
+        </form>
+        <p class="field-note">Free-tier access is subject to Google's terms and usage limits. Model discovery does not verify pricing or generation quota. <a href="https://ai.google.dev/gemini-api/docs/pricing" target="_blank" rel="noreferrer">Pricing</a> · <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noreferrer">Google API terms</a></p>
+      </div>
+    </section>
+    <form id="preferences-form">
+      <section id="model" class="card" aria-labelledby="model-title"><span class="card-icon blue" aria-hidden="true">◉</span><div class="card-content">
+        <h2 id="model-title">AI Model</h2><p>Start with the recommended Flash-Lite model, or choose another text model listed for your key.</p>
+        <label for="model-select">MODEL</label><select id="model-select" required><option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (recommended)</option></select>
+        <p id="model-state" class="field-note">Connect your key to discover available models.</p>
+        <div class="callout"><strong>Model guide:</strong> Flash-Lite is the suggested starting point for short translations. Other models may take longer or require paid access. To refresh the list, use Connect &amp; save key above.</div>
+      </div></section>
+      <section id="translation" class="card" aria-labelledby="translation-title"><span class="card-icon" aria-hidden="true">◎</span><div class="card-content">
+        <h2 id="translation-title">Translation</h2><p>Choose your native language, or the language you prefer to read in.</p>
+        <label for="target-language">DEFAULT TARGET LANGUAGE</label><select id="target-language" required></select>
+        <div class="callout preview"><span class="eyebrow">YOUR QUICK ACTION</span><span class="preview-button" id="button-preview">Translate to English <span aria-hidden="true">▾</span></span><p>The arrow offers another language and a translated summary. These choices apply only to the current selection.</p></div>
+        <label class="check"><input id="enabled" type="checkbox" checked><span>Show MetaFrasi when I select text on websites</span></label>
+        <p class="field-note">Double-click a word or drag across a passage. Writing fields are left to tools such as TypePilot.</p>
+      </div></section>
+      <section id="appearance" class="card" aria-labelledby="appearance-title"><span class="card-icon blue" aria-hidden="true">◐</span><div class="card-content">
+        <h2 id="appearance-title">Appearance</h2><p>A small reading tool that fits your browser.</p><label for="theme">THEME</label>
+        <select id="theme"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select>
+      </div></section>
+      <div class="save-bar"><span id="save-status" role="status" aria-live="polite">Changes are saved only when you choose Save preferences.</span><button class="primary" id="save" type="submit">Save preferences</button></div>
+    </form>
+    <section id="privacy" class="card" aria-labelledby="privacy-title"><span class="card-icon" aria-hidden="true">◇</span><div class="card-content">
+      <h2 id="privacy-title">Privacy &amp; Data</h2><p>No account with MetaFrasi, no analytics, no ads. Only the passage you explicitly submit is sent to Google, together with the translation instructions and your API key.</p>
+      <p>Recent results are cached temporarily in memory to avoid repeated requests. They are not stored as a reading history. Your API key is stored locally and is not encrypted by MetaFrasi.</p>
+      <button type="button" id="clear-cache" class="secondary">Clear temporary results</button><p id="cache-status" role="status" aria-live="polite"></p>
+      <p class="field-note"><a href="docs/privacy.html" target="_blank">Privacy Policy</a> · <a href="https://github.com/KyriakosGian/MetaFrasi/issues" target="_blank" rel="noreferrer">Report a problem</a></p>
+    </div></section>
+    <footer>MetaFrasi <span id="footer-version">0.1.0</span> · Free, open-source software · MIT License</footer>
+  </main>
+</body></html>
