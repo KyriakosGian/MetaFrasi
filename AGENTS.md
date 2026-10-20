@@ -9,5 +9,7 @@
 - The Translate action uses the saved target. Dropdown language changes apply only to the current selection. Summary mode uses that same temporary target.
 - Do not activate on editable fields. Preserve coexistence with TypePilot.
 - Run the dependency-free tests and scripts/check.mjs after functional edits. Use a disposable browser profile and mocked requests for integration tests. Clearly distinguish mocked testing from live Gemini testing.
+- Never install test browser binaries inside the project. Reuse an existing shared test browser when available, or use an OS temporary directory and remove the downloaded browsers after testing.
+- After verification, remove generated test reports, screenshots, temporary helpers and superseded release ZIPs unless retention is requested. Keep the current distributable and its checksum.
 - Keep manifest.json, package.json, shared/core.js and visible version text consistent. Package only allowlisted runtime files.
 - The public repository is planned as KyriakosGian/MetaFrasi and the Pages source is docs/. Store submission follows user testing.
