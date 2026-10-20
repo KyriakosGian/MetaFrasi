@@ -3,6 +3,7 @@
   globalThis.__metaFrasiLoaded = true;
   let host, root, selection, settings, pendingId, captureTimer, captureVersion = 0;
   let temporaryLanguage = '', resultText = '', view = 'launcher';
+  let panelPosition = null, panelSize = null, gesture = null;
   const $ = id => root.getElementById(id);
   async function send(message) {
     try {
@@ -24,7 +25,7 @@
     button,select { font:inherit; }
     button { border:0; cursor:pointer; color:inherit; background:transparent; padding:9px 12px; border-radius:6px; }
     button:hover { background:var(--tint); }
-    button:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible { outline:2px solid #9b95ff; outline-offset:-3px; }
+    button:focus-visible,select:focus-visible,summary:focus-visible,a:focus-visible,.heading:focus-visible { outline:2px solid #9b95ff; outline-offset:-3px; }
     button:disabled { cursor:wait; opacity:.6; }
     .launcher { display:flex; align-items:center; gap:0; padding:3px; }
     .launcher button { padding:5px 8px; font-size:12px; line-height:1.4; border-radius:5px; }
@@ -36,18 +37,22 @@
     select { display:block; width:100%; color:var(--fg); background:var(--input); border:1px solid var(--line); border-radius:7px; padding:8px; margin-bottom:8px; }
     .wide { width:100%; text-align:left; }
     .hint { margin:6px 0; font-size:12px; color:var(--muted); }
-    .result { width:390px; max-width:calc(100vw - 18px); }
-    .heading { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:5px 10px; border-bottom:1px solid var(--line); }
+    .result { position:relative; display:flex; flex-direction:column; width:460px; min-width:min(280px,calc(100vw - 18px)); max-width:calc(100vw - 18px); min-height:min(160px,calc(100vh - 18px)); max-height:calc(100vh - 18px); }
+    .heading { display:flex; flex-shrink:0; align-items:center; justify-content:space-between; gap:8px; padding:5px 10px; border-bottom:1px solid var(--line); cursor:grab; touch-action:none; user-select:none; }
+    .heading.dragging { cursor:grabbing; }
     .heading-title { display:flex; align-items:baseline; gap:7px; min-width:0; white-space:nowrap; }
     .heading button { padding:4px 7px; flex-shrink:0; }
-    .brand { color:#b9b4ff; font-size:11px; font-weight:700; letter-spacing:.01em; }
+    .brand { color:#b9b4ff; font-size:11px; font-weight:700; letter-spacing:.01em; flex-shrink:0; }
     .light .brand { color:#5146bd; }
     h2 { font-size:11px; margin:0; font-weight:500; overflow:hidden; text-overflow:ellipsis; }
-    .body { padding:15px; max-height:min(420px,55vh); overflow:auto; overflow-wrap:anywhere; }
+    .body { padding:15px; flex:1 1 auto; min-height:0; max-height:min(420px,55vh); overflow:auto; overflow-wrap:anywhere; }
+    .result.sized .body { max-height:none; }
     .output { margin:0; white-space:pre-wrap; unicode-bidi:plaintext; }
     .error { color:#ffb9b9; }
     .light .error { color:#a62929; }
-    .footer { display:flex; flex-wrap:wrap; gap:4px; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding:7px 9px; }
+    .footer { display:flex; flex-shrink:0; flex-wrap:wrap; gap:4px; justify-content:space-between; align-items:center; border-top:1px solid var(--line); padding:7px 24px 7px 9px; }
+    .resize { position:absolute; right:0; bottom:0; width:20px; height:20px; padding:0; border-radius:4px; cursor:nwse-resize; touch-action:none; user-select:none; }
+    .resize::after { content:''; position:absolute; right:4px; bottom:4px; width:9px; height:9px; border-right:2px solid var(--muted); border-bottom:2px solid var(--muted); }
     .meta { color:var(--muted); font-size:11px; line-height:1.5; padding:0 4px; flex:1; min-width:150px; overflow-wrap:anywhere; }
     details { font-size:12px; color:var(--muted); margin-top:14px; }
     summary { cursor:pointer; }
@@ -76,16 +81,25 @@
         <button id="settings-menu" class="wide">Settings</button>
       </div>
       <section id="result" class="result" aria-label="MetaFrasi result" hidden>
-        <div class="heading"><div class="heading-title"><span class="brand">MetaFrasi</span><h2 id="title">Translation</h2></div><button id="close-result" aria-label="Close MetaFrasi">×</button></div>
+        <div id="move" class="heading" tabindex="0" role="group" aria-label="Move translation window" title="Drag to move. Arrow keys also move."><div class="heading-title"><span class="brand">MetaFrasi</span><h2 id="title">Translation</h2></div><button id="close-result" aria-label="Close MetaFrasi">×</button></div>
         <div class="body"><p id="output" class="output" role="status" aria-live="polite" dir="auto"></p>
           <details id="original"><summary>Original text</summary><p id="source" class="source" dir="auto"></p></details>
         </div>
         <div class="footer"><span id="meta" class="meta"></span><div>
           <button id="setup" hidden>Open Settings</button><button id="back" hidden>Back</button><button id="copy" hidden>Copy</button>
         </div></div>
+        <button id="resize" class="resize" aria-label="Resize translation window" title="Drag to resize. Arrow keys also resize."></button>
       </section>`;
     root.append(shell);
     document.documentElement.append(host);
+    for (const kind of ['move', 'resize']) {
+      const handle = $(kind);
+      handle.addEventListener('pointerdown', event => startGesture(event, kind));
+      handle.addEventListener('pointermove', moveGesture);
+      for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) handle.addEventListener(type, finishGesture);
+      handle.addEventListener('keydown', event => adjustWithKeyboard(event, kind));
+    }
+    $('original').addEventListener('toggle', position);
     $('translate').addEventListener('click', () => run('translate'));
     $('summarize').addEventListener('click', () => run('summary'));
     $('expand').addEventListener('click', () => {
@@ -112,16 +126,72 @@
   }
   function position() {
     if (!host || host.hidden || !selection) return;
+    if (view === 'result' && panelSize) {
+      $('result').style.width = `${Math.min(panelSize.width, window.innerWidth - 18)}px`;
+      $('result').style.height = `${Math.min(panelSize.height, window.innerHeight - 18)}px`;
+      $('result').classList.add('sized');
+    }
     const bounds = host.getBoundingClientRect();
     const width = window.innerWidth, height = window.innerHeight;
-    const left = Math.max(8, Math.min(selection.rect.left, width - bounds.width - 8));
-    let top = selection.rect.bottom + 8;
-    if (top + bounds.height > height - 8) top = selection.rect.top - bounds.height - 8;
+    const manual = view === 'result' && panelPosition;
+    const left = Math.max(8, Math.min(manual ? manual.left : selection.rect.left, width - bounds.width - 8));
+    let top = manual ? manual.top : selection.rect.bottom + 8;
+    if (!manual && top + bounds.height > height - 8) top = selection.rect.top - bounds.height - 8;
     top = Math.max(8, Math.min(top, height - bounds.height - 8));
     host.style.setProperty('--metafrasi-left', `${left}px`);
     host.style.setProperty('--metafrasi-top', `${top}px`);
+    if (manual) panelPosition = {left, top};
+  }
+  function resizePanel(width, height) {
+    const availableWidth = Math.max(0, window.innerWidth - panelPosition.left - 10);
+    const availableHeight = Math.max(0, window.innerHeight - panelPosition.top - 10);
+    // Include the shell border in viewport limits. Controls remain visible at the minimum size.
+    panelSize = {
+      width: Math.max(Math.min(280, availableWidth), Math.min(width, availableWidth)),
+      height: Math.max(Math.min(160, availableHeight), Math.min(height, availableHeight))
+    };
+    position();
+  }
+  function startGesture(event, kind) {
+    if (event.button !== 0 || !event.isPrimary || gesture || (kind === 'move' && event.target.closest('button'))) return;
+    event.preventDefault();
+    const bounds = host.getBoundingClientRect(), panel = $('result').getBoundingClientRect();
+    panelPosition = {left: bounds.left, top: bounds.top};
+    gesture = {kind, pointerId: event.pointerId, handle: event.currentTarget, x: event.clientX, y: event.clientY,
+      left: bounds.left, top: bounds.top, width: panel.width, height: panel.height};
+    event.currentTarget.setPointerCapture(event.pointerId);
+    if (kind === 'move') $('move').classList.add('dragging');
+  }
+  function moveGesture(event) {
+    if (!gesture || event.pointerId !== gesture.pointerId) return;
+    const dx = event.clientX - gesture.x, dy = event.clientY - gesture.y;
+    if (gesture.kind === 'resize') resizePanel(gesture.width + dx, gesture.height + dy);
+    else {
+      panelPosition = {left: gesture.left + dx, top: gesture.top + dy};
+      position();
+    }
+  }
+  function finishGesture(event) {
+    if (!gesture || (event?.pointerId !== undefined && event.pointerId !== gesture.pointerId)) return;
+    const {handle, pointerId} = gesture;
+    gesture = null;
+    $('move').classList.remove('dragging');
+    if (handle.hasPointerCapture(pointerId)) handle.releasePointerCapture(pointerId);
+  }
+  function adjustWithKeyboard(event, kind) {
+    if (event.target !== event.currentTarget || !['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
+    event.preventDefault(); event.stopPropagation();
+    const step = event.shiftKey ? 1 : 10;
+    const dx = event.key === 'ArrowRight' ? step : event.key === 'ArrowLeft' ? -step : 0;
+    const dy = event.key === 'ArrowDown' ? step : event.key === 'ArrowUp' ? -step : 0;
+    const bounds = host.getBoundingClientRect(), panel = $('result').getBoundingClientRect();
+    panelPosition = {left: bounds.left, top: bounds.top};
+    if (kind === 'resize') resizePanel(panel.width + dx, panel.height + dy);
+    else { panelPosition.left += dx; panelPosition.top += dy; position(); }
   }
   function showLauncher() {
+    finishGesture();
+    panelPosition = null;
     view = 'launcher'; resultText = '';
     $('launcher').hidden = false; $('result').hidden = true; $('more').hidden = true;
     $('expand').setAttribute('aria-expanded', 'false');
@@ -169,6 +239,8 @@
     }
   }
   function close() {
+    finishGesture();
+    panelPosition = null;
     captureVersion++;
     clearTimeout(captureTimer);
     if (pendingId) send({type: 'CANCEL', requestId: pendingId}).catch(() => {});
@@ -214,5 +286,5 @@
   window.addEventListener('scroll', event => {
     if (!event.composedPath().includes(host) && view === 'launcher') close();
   }, {passive: true, capture: true});
-  window.addEventListener('resize', position);
+  window.addEventListener('resize', () => { finishGesture(); position(); });
 })();

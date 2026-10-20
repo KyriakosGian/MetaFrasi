@@ -1,4 +1,4 @@
-export const VERSION = '0.1.1';
+export const VERSION = '0.1.2';
 export const MAX_TEXT_LENGTH = 12000;
 export const LANGUAGES = Object.freeze([
   ['ar', 'Arabic'], ['bg', 'Bulgarian'], ['zh-CN', 'Chinese (Simplified)'],

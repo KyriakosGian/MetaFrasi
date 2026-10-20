@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.2 - 2026-10-20
+
+- Widen the translation window from 390 to 460 pixels.
+- Drag the title bar to move the window and the bottom-right handle to resize it.
+- Support arrow-key movement and resizing, with Shift for one-pixel adjustments.
+- Keep controls within the viewport and scroll long results inside the resized window.
+- Retain the chosen size until the page reloads and preserve a moved position when a pending translation finishes.
+- Add browser checks for pointer interactions, keyboard controls, viewport limits and delayed responses.
+
 ## 0.1.1 - 2026-10-19
 
 - Reduce the selection button size and place the smaller result title on one line.

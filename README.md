@@ -2,7 +2,7 @@
 
 Translate the passage you are reading, or get a translated summary. A small, open-source Chrome extension using your own Google Gemini API key.
 
-Version **0.1.1**, testing release. English interface. Manifest V3. No runtime dependencies, developer-operated backend or analytics.
+Version **0.1.2**, testing release. English interface. Manifest V3. No runtime dependencies, developer-operated backend or analytics.
 
 [Website](https://kyriakosgian.github.io/MetaFrasi/) · [Releases](https://github.com/KyriakosGian/MetaFrasi/releases) · [Privacy](docs/privacy.html) · [Support](https://github.com/KyriakosGian/MetaFrasi/issues)
 
@@ -13,6 +13,7 @@ Version **0.1.1**, testing release. English interface. Manifest V3. No runtime d
 - Choose another language for the current selection without changing your default.
 - Summarize and translate a longer passage in one action.
 - Keep the original passage visible on demand and copy the result.
+- Move the wider result window by its title bar and resize it from the bottom-right corner.
 - Preserve list bullets, numbering and indentation when selecting HTML lists.
 - See elapsed milliseconds, the model and API-reported token usage below each result.
 - Connect your own Gemini key and discover compatible text models.
@@ -31,6 +32,8 @@ Version **0.1.1**, testing release. English interface. Manifest V3. No runtime d
 7. Reload webpages that were open before installation. Select a passage to see the Translate button.
 
 Chrome Web Store submission is planned after testing. No store listing is available yet.
+
+Drag the result title bar to move the window, or its bottom-right corner to resize it. You can also focus either control with Tab and use the arrow keys, with Shift for smaller steps. The chosen size lasts until the page reloads. New selections open beside the selected text, and the window stays within the viewport.
 
 ## Google Gemini and cost
 
@@ -71,7 +74,7 @@ node scripts/package.mjs
 node scripts/preview.mjs
 ```
 
-`dist/metafrasi-0.1.1.zip` is an allowlisted extension package. Tests, development scripts and local artifacts are excluded. A SHA-256 file accompanies it.
+`dist/metafrasi-0.1.2.zip` is an allowlisted extension package. Tests, development scripts and local artifacts are excluded. A SHA-256 file accompanies it.
 
 Browser integration tests use Playwright with its Chromium browser in a temporary profile, fake credentials and mocked Gemini responses. They never use your personal Chrome profile or a real API key. Set `METAFRASI_PLAYWRIGHT` to an absolute installed Playwright package directory when it is not locally installed, then run:
 
@@ -91,7 +94,7 @@ node scripts/browser-test.mjs
 
 ## Publishing
 
-Push the repository to `KyriakosGian/MetaFrasi`. In GitHub Settings → Pages, choose **GitHub Actions**. The included Pages workflow publishes `docs/`. CI checks the project and builds an extension ZIP on pushes and pull requests. Tagging `v0.1.1` publishes a GitHub Release with the ZIP and checksum. See [release checklist](store-assets/SUBMISSION.md) before submitting to the Chrome Web Store.
+Push the repository to `KyriakosGian/MetaFrasi`. In GitHub Settings → Pages, choose **GitHub Actions**. The included Pages workflow publishes `docs/`. CI checks the project and builds an extension ZIP on pushes and pull requests. Tagging `v0.1.2` publishes a GitHub Release with the ZIP and checksum. See [release checklist](store-assets/SUBMISSION.md) before submitting to the Chrome Web Store.
 
 ## License and credits
 

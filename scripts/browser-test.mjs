@@ -46,6 +46,14 @@ async function click(selector) {
   const {model}=await cdp.send('DOM.getBoxModel',{nodeId}); const b=model.border;
   await page.mouse.click((b[0]+b[2])/2,(b[1]+b[5])/2);
 }
+async function rect(selector=':host') {
+  return ui(selector,function(){const b=this.getBoundingClientRect();return {left:b.left,top:b.top,right:b.right,bottom:b.bottom,width:b.width,height:b.height};});
+}
+async function drag(selector,dx,dy) {
+  const b=await rect(selector),x=b.left+b.width/2,y=b.top+b.height/2;
+  await page.mouse.move(x,y);await page.mouse.down();
+  await page.mouse.move(x+dx,y+dy,{steps:8});await page.mouse.up();
+}
 async function selectPassage(id='passage') {
   await page.locator('#'+id).evaluate(element => {
     const range=document.createRange();range.selectNodeContents(element);const selection=getSelection();selection.removeAllRanges();selection.addRange(range);
@@ -119,6 +127,63 @@ try {
     await poll(()=>ui('#meta',function(){return this.textContent.includes('cache');}),'Cache did not serve repeated request');
     assert.match(await ui('#meta',function(){return this.textContent;}),/0 tokens \(cache\)/);
     await page.keyboard.press('Escape');assert.equal(await ui(':host',function(){return this.hidden;}),true);
+  });
+  await test('wider panel supports pointer and keyboard movement and resizing without API calls',async()=>{
+    await selectPassage();await click('#translate');
+    await poll(()=>ui('#copy',function(){return !this.hidden;}),'Missing result');
+    assert.equal((await rect('#result')).width,460);
+    const before=await rect(),calls=await worker.evaluate(()=>__test.calls.length);
+    await drag('#move',-140,-120);
+    let after=await rect();
+    assert.ok(Math.abs(after.left-(before.left-140))<1&&Math.abs(after.top-(before.top-120))<1,'Dragging did not move the panel');
+    const size=await rect('#result');
+    await drag('#resize',120,130);
+    let resized=await rect('#result');
+    assert.ok(Math.abs(resized.width-(size.width+120))<1&&Math.abs(resized.height-(size.height+130))<1,'Dragging did not resize the panel');
+    await ui('#move',function(){this.focus();});await page.keyboard.press('ArrowRight');
+    assert.ok(Math.abs((await rect()).left-(after.left+10))<1);
+    await ui('#resize',function(){this.focus();});await page.keyboard.press('ArrowDown');
+    assert.ok(Math.abs((await rect('#result')).height-(resized.height+10))<1);
+    assert.equal(await worker.evaluate(()=>__test.calls.length),calls,'Moving or resizing must not request a translation');
+    resized=await rect('#result');
+    await click('#back');await click('#translate');
+    await poll(()=>ui('#copy',function(){return !this.hidden;}),'Missing repeated result');
+    assert.equal((await rect('#result')).width,resized.width,'The chosen size should survive returning to the launcher');
+    await page.screenshot({path:path.join(artifacts,'movable-panel.png')});
+    await click('#close-result');assert.equal(await ui(':host',function(){return this.hidden;}),true);
+  });
+  await test('a pending translation keeps its dragged position when the response arrives',async()=>{
+    await config({delay:1200});
+    await page.locator('#second').evaluate(element=>{element.textContent='A delayed translation keeps its manually chosen position.';});
+    await selectPassage('second');await click('#translate');await drag('#move',-160,-150);
+    const moved=await rect();
+    await poll(()=>ui('#copy',function(){return !this.hidden;}),'Delayed result did not finish');
+    const completed=await rect();
+    assert.ok(Math.abs(completed.left-moved.left)<1&&Math.abs(completed.top-moved.top)<1,'The completed result jumped back to the selection');
+  });
+  await test('dragging and resizing stay on screen and long results scroll inside the panel',async()=>{
+    await config({mode:'echo'});
+    await page.locator('#second').evaluate(element=>{element.textContent='A long passage for testing the scrolling translation window. '.repeat(35);});
+    await selectPassage('second');await click('#translate');
+    await poll(()=>ui('#copy',function(){return !this.hidden;}),'Long result did not finish');
+    await drag('#move',-1500,-1500);
+    let bounds=await rect();assert.equal(bounds.left,8);assert.equal(bounds.top,8);
+    await drag('#resize',100,-2000);
+    assert.equal((await rect('#result')).height,160);
+    assert.equal(await ui('.body',function(){return this.scrollHeight>this.clientHeight;}),true);
+    const copy=await rect('#copy');bounds=await rect();
+    assert.ok(copy.bottom<=bounds.bottom&&copy.top>=bounds.top,'Result controls must remain visible');
+    await drag('#resize',2000,2000);
+    bounds=await rect();assert.ok(bounds.right<=1272&&bounds.bottom<=892,JSON.stringify(bounds));
+    await drag('#resize',-2000,-2000);
+    assert.equal((await rect('#result')).width,280);assert.equal((await rect('#result')).height,160);
+    await drag('#move',2000,2000);
+    bounds=await rect();assert.ok(bounds.right<=1272&&bounds.bottom<=892,JSON.stringify(bounds));
+    await page.setViewportSize({width:320,height:260});
+    await poll(async()=>{const b=await rect();return b.left>=8&&b.top>=8&&b.right<=312&&b.bottom<=252;},'Panel did not move inside the resized viewport');
+    await ui('#original',function(){this.open=true;});
+    await page.keyboard.press('Escape');
+    await page.setViewportSize({width:1280,height:900});
   });
   await test('temporary language and summary preserve the saved default',async()=>{
     await selectPassage();await click('#expand');
