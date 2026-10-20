@@ -1,6 +1,6 @@
 # MetaFrasi
 
-Translate the passage you are reading, or get a translated summary. A small, open-source Chrome extension using your own Google Gemini API key.
+Translate the passage you are reading, or get a translated summary. A small, free and open-source Chrome extension using your own Google Gemini API key, with support for [Google's free tier](https://ai.google.dev/gemini-api/docs/pricing) where available.
 
 Version **0.1.3**, testing release. English interface. Manifest V3. No runtime dependencies, developer-operated backend or analytics.
 
