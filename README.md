@@ -2,7 +2,7 @@
 
 Translate the passage you are reading, or get a translated summary. A small, open-source Chrome extension using your own Google Gemini API key.
 
-Version **0.1.2**, testing release. English interface. Manifest V3. No runtime dependencies, developer-operated backend or analytics.
+Version **0.1.3**, testing release. English interface. Manifest V3. No runtime dependencies, developer-operated backend or analytics.
 
 [Website](https://kyriakosgian.github.io/MetaFrasi/) · [Releases](https://github.com/KyriakosGian/MetaFrasi/releases) · [Privacy](docs/privacy.html) · [Support](https://github.com/KyriakosGian/MetaFrasi/issues)
 
@@ -17,6 +17,7 @@ Version **0.1.2**, testing release. English interface. Manifest V3. No runtime d
 - Preserve list bullets, numbering and indentation when selecting HTML lists.
 - See elapsed milliseconds, the model and API-reported token usage below each result.
 - Connect your own Gemini key and discover compatible text models.
+- Edit the shared translation and summary instructions in Settings, or restore the default.
 - Choose dark, light or system appearance.
 - Pause the selection control and clear temporary results.
 - Skip editable fields to coexist with writing tools such as [TypePilot](https://github.com/KyriakosGian/TypePilot).
@@ -34,6 +35,8 @@ Version **0.1.2**, testing release. English interface. Manifest V3. No runtime d
 Chrome Web Store submission is planned after testing. No store listing is available yet.
 
 Drag the result title bar to move the window, or its bottom-right corner to resize it. You can also focus either control with Tab and use the arrow keys, with Shift for smaller steps. The chosen size lasts until the page reloads. New selections open beside the selected text, and the window stays within the viewport.
+
+In **Settings → Translation Instructions**, edit the default prompt to adjust wording, tone or terminology. The instructions apply to both Translate and Summarize. Choose **Save preferences** to apply edits or a reset. An empty field uses the default. MetaFrasi still supplies the selected action, target language and JSON response format, so you do not need to add those instructions.
 
 ## Google Gemini and cost
 
@@ -63,6 +66,8 @@ The service worker keeps up to 40 cached results for up to 20 minutes, with expi
 
 The result footer shows Google's total token count for a new request, including any usage Google includes in that total. A cached result shows zero new tokens because it does not make an API request. Hover over its footer to see the original request's usage. If Google omits usage data, the footer says that tokens are unavailable.
 
+Custom instructions, up to 4,000 characters, stay in trusted local extension storage and are sent to Google with each requested translation or summary. Editing, resetting or saving them does not call Gemini. Saving preferences clears cached results and cancels pending requests, so later translations use the saved instructions.
+
 ## Development
 
 Node.js 22 or later. No install step is needed for unit tests, checks, packaging or local website preview.
@@ -74,13 +79,15 @@ node scripts/package.mjs
 node scripts/preview.mjs
 ```
 
-`dist/metafrasi-0.1.2.zip` is an allowlisted extension package. Tests, development scripts and local artifacts are excluded. A SHA-256 file accompanies it.
+`dist/metafrasi-0.1.3.zip` is an allowlisted extension package. Tests, development scripts and local artifacts are excluded. A SHA-256 file accompanies it.
 
 Browser integration tests use Playwright with its Chromium browser in a temporary profile, fake credentials and mocked Gemini responses. They never use your personal Chrome profile or a real API key. Set `METAFRASI_PLAYWRIGHT` to an absolute installed Playwright package directory when it is not locally installed, then run:
 
 ```sh
 node scripts/browser-test.mjs
 ```
+
+Set `METAFRASI_TEST_ARTIFACTS` to a temporary directory to keep generated screenshots, reports and the disposable profile outside the checkout. Use an existing shared test browser or download one into an OS temporary directory. Remove temporary browsers and test output after verification.
 
 ## Structure
 
@@ -94,7 +101,7 @@ node scripts/browser-test.mjs
 
 ## Publishing
 
-Push the repository to `KyriakosGian/MetaFrasi`. In GitHub Settings → Pages, choose **GitHub Actions**. The included Pages workflow publishes `docs/`. CI checks the project and builds an extension ZIP on pushes and pull requests. Tagging `v0.1.2` publishes a GitHub Release with the ZIP and checksum. See [release checklist](store-assets/SUBMISSION.md) before submitting to the Chrome Web Store.
+Push the repository to `KyriakosGian/MetaFrasi`. In GitHub Settings → Pages, choose **GitHub Actions**. The included Pages workflow publishes `docs/`. CI checks the project and builds an extension ZIP on pushes and pull requests. Tagging `v0.1.3` publishes a GitHub Release with the ZIP and checksum. See [release checklist](store-assets/SUBMISSION.md) before submitting to the Chrome Web Store.
 
 ## License and credits
 

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.3 - 2026-10-20
+
+- Add editable Translation Instructions in Settings, with a visible default and Reset to default.
+- Apply saved instructions to translation and summary requests while retaining the action, target language and structured response rules.
+- Store instructions locally in trusted extension storage. Do not expose them to content scripts or send a request when editing or saving.
+- Clear cached results and cancel pending requests when instructions change.
+- Keep Settings actions available after reloading a section link.
+- Preserve existing settings, document the additional stored and transmitted preference, and add unit and mocked browser coverage.
+- Allow browser-test artifacts to be written outside the project using METAFRASI_TEST_ARTIFACTS.
+
 ## 0.1.2 - 2026-10-20
 
 - Widen the translation window from 390 to 460 pixels.

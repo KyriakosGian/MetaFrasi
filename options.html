@@ -9,9 +9,9 @@
   <aside class="sidebar">
     <a class="brand" href="#api"><img src="icons/logo.svg" width="42" height="42" alt=""><span>MetaFrasi<small>AI READING ASSISTANT</small></span></a>
     <nav aria-label="Settings sections">
-      <a href="#api" class="active">API Configuration</a><a href="#model">AI Model</a><a href="#translation">Translation</a><a href="#appearance">Appearance</a><a href="#privacy">Privacy &amp; Data</a>
+      <a href="#api" class="active">API Configuration</a><a href="#model">AI Model</a><a href="#translation">Translation</a><a href="#instructions">Translation Instructions</a><a href="#appearance">Appearance</a><a href="#privacy">Privacy &amp; Data</a>
     </nav>
-    <div class="credits">Created by <a href="https://github.com/KyriakosGian" target="_blank" rel="noreferrer">KyriakosGian</a><br><a href="https://procreta.gr" target="_blank" rel="noreferrer">ProCreta.gr</a><span id="version">v0.1.2</span></div>
+    <div class="credits">Created by <a href="https://github.com/KyriakosGian" target="_blank" rel="noreferrer">KyriakosGian</a><br><a href="https://procreta.gr" target="_blank" rel="noreferrer">ProCreta.gr</a><span id="version">v0.1.3</span></div>
   </aside>
   <main>
     <header class="page-header"><div><p class="eyebrow">YOUR WORDS. YOUR LANGUAGE.</p><h1>Make reading feel familiar.</h1><p>Connect once. Select text anywhere you read. Translate when you need it.</p></div><span class="pill">Chrome extension</span></header>
@@ -28,7 +28,7 @@
           <label for="api-key">API KEY <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Get an API key ↗</a></label>
           <div class="key-field"><input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your Gemini API key" maxlength="256"><button type="button" id="reveal" aria-label="Show API key" aria-pressed="false">Show</button></div>
           <p id="key-state" class="field-note">Your key stays in this browser profile. It is not synced.</p>
-          <label class="check"><input id="consent" type="checkbox" required><span>I understand that my selected text and target language are sent to Google when I request a translation or summary.</span></label>
+          <label class="check"><input id="consent" type="checkbox" required><span>I understand that my selected text, target language and translation instructions are sent to Google when I request a translation or summary.</span></label>
           <div class="actions"><button class="primary" id="connect" type="submit">Connect &amp; save key</button><button id="disconnect" type="button" class="subtle" hidden>Remove saved key</button></div>
           <p id="connection-status" role="status" aria-live="polite"></p>
         </form>
@@ -49,6 +49,13 @@
         <label class="check"><input id="enabled" type="checkbox" checked><span>Show MetaFrasi when I select text on websites</span></label>
         <p class="field-note">Double-click a word or drag across a passage. Writing fields are left to tools such as TypePilot.</p>
       </div></section>
+      <section id="instructions" class="card" aria-labelledby="instructions-title"><span class="card-icon blue" aria-hidden="true">☷</span><div class="card-content">
+        <h2 id="instructions-title">Translation Instructions</h2><p>Base instructions applied to Translate and Summarize. Adjust wording, tone or terminology to suit your reading.</p>
+        <div class="field-heading"><label for="translation-instructions">SYSTEM INSTRUCTIONS</label><button id="reset-instructions" type="button" class="text-button">Reset to default</button></div>
+        <textarea id="translation-instructions" rows="8" maxlength="4000" spellcheck="false" aria-describedby="instructions-note instructions-storage"></textarea>
+        <p id="instructions-note" class="field-note">MetaFrasi sets the action, target language and response format automatically. No JSON instructions needed. Up to 4,000 characters. Leave empty to use the default.</p>
+        <p id="instructions-storage" class="field-note">Stored in this browser profile and sent to Google only with a translation or summary request. Choose Save preferences to apply changes or a reset.</p>
+      </div></section>
       <section id="appearance" class="card" aria-labelledby="appearance-title"><span class="card-icon blue" aria-hidden="true">◐</span><div class="card-content">
         <h2 id="appearance-title">Appearance</h2><p>A small reading tool that fits your browser.</p><label for="theme">THEME</label>
         <select id="theme"><option value="dark">Dark</option><option value="light">Light</option><option value="system">System</option></select>
@@ -61,6 +68,6 @@
       <button type="button" id="clear-cache" class="secondary">Clear temporary results</button><p id="cache-status" role="status" aria-live="polite"></p>
       <p class="field-note"><a href="docs/privacy.html" target="_blank">Privacy Policy</a> · <a href="https://github.com/KyriakosGian/MetaFrasi/issues" target="_blank" rel="noreferrer">Report a problem</a></p>
     </div></section>
-    <footer>MetaFrasi <span id="footer-version">0.1.2</span> · Free, open-source software · MIT License</footer>
+    <footer>MetaFrasi <span id="footer-version">0.1.3</span> · Free, open-source software · MIT License</footer>
   </main>
 </body></html>

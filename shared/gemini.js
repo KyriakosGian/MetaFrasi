@@ -40,9 +40,9 @@ export function createGeminiClient(fetcher = (...args) => fetch(...args)) {
       if (!available.length) throw new Error('No compatible Gemini text models were found for this key. Check your project in AI Studio.');
       return available;
     },
-    async translate(apiKey, model, task, signal) {
+    async translate(apiKey, model, task, signal, instructions) {
       if (!validModel(model)) throw new Error('Choose a valid text model in Settings.');
-      const body = await request(`models/${model}:generateContent`, apiKey, {method: 'POST', body: JSON.stringify(buildPayload(task)), signal});
+      const body = await request(`models/${model}:generateContent`, apiKey, {method: 'POST', body: JSON.stringify(buildPayload(task, instructions)), signal});
       const count = body.usageMetadata?.totalTokenCount;
       return {text: parseTranslation(body), tokens: Number.isFinite(count) && count >= 0 ? count : null};
     }

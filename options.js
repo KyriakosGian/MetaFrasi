@@ -1,4 +1,4 @@
-import {LANGUAGES, languageName, DEFAULTS} from './shared/core.js';
+import {LANGUAGES, languageName, DEFAULTS, DEFAULT_INSTRUCTIONS, MAX_INSTRUCTIONS_LENGTH} from './shared/core.js';
 
 const $ = id => document.getElementById(id);
 let state;
@@ -25,6 +25,8 @@ function render(next) {
   $('target-language').replaceChildren(...LANGUAGES.map(([code, name]) => new Option(name, code)));
   $('target-language').value = next.targetLanguage;
   $('theme').value = next.theme; $('enabled').checked = next.enabled; $('consent').checked = next.cloudConsent;
+  $('translation-instructions').value = next.instructions;
+  $('translation-instructions').maxLength = MAX_INSTRUCTIONS_LENGTH;
   $('api-key').value = ''; $('api-key').type = 'password'; $('reveal').textContent = 'Show'; $('reveal').setAttribute('aria-pressed', 'false');
   $('api-key').placeholder = next.hasKey ? 'Key saved. Paste a new key to replace it.' : 'Paste your Gemini API key';
   $('key-state').textContent = next.hasKey ? 'A key is saved in this browser profile. Leave the field empty to reuse it.' : 'Your key stays in this browser profile. It is not synced.';
@@ -35,13 +37,13 @@ function render(next) {
   theme(); preview();
 }
 function busy(value) {
-  for (const id of ['connect', 'save', 'disconnect']) $(id).disabled = value;
+  for (const id of ['connect', 'save', 'disconnect', 'reset-instructions']) $(id).disabled = value;
 }
 $('connect-form').addEventListener('submit', async event => {
   event.preventDefault(); busy(true); status('connection-status', 'Checking your key and loading models…');
   try {
-    // Connecting changes the key and model list only; keep unsaved language/theme choices visible.
-    const draft = {targetLanguage: $('target-language').value, theme: $('theme').value, enabled: $('enabled').checked};
+    // Connecting changes the key and model list only; retain unsaved preferences.
+    const draft = {targetLanguage: $('target-language').value, theme: $('theme').value, enabled: $('enabled').checked, instructions: $('translation-instructions').value};
     const next = await send({type: 'CONNECT', apiKey: $('api-key').value, cloudConsent: $('consent').checked});
     render({...next, ...draft});
     status('connection-status', 'Key accepted by Google and saved. Your model list is ready.');
@@ -51,7 +53,7 @@ $('connect-form').addEventListener('submit', async event => {
 $('preferences-form').addEventListener('submit', async event => {
   event.preventDefault(); busy(true);
   try {
-    const next = await send({type: 'SAVE_PREFERENCES', model: $('model-select').value, targetLanguage: $('target-language').value, theme: $('theme').value, enabled: $('enabled').checked});
+    const next = await send({type: 'SAVE_PREFERENCES', model: $('model-select').value, targetLanguage: $('target-language').value, theme: $('theme').value, enabled: $('enabled').checked, instructions: $('translation-instructions').value});
     render(next); status('save-status', 'Preferences saved. Select a new passage to use them.');
   } catch (error) { status('save-status', error.message, true); }
   finally { busy(false); }
@@ -70,8 +72,15 @@ $('reveal').addEventListener('click', () => {
   const reveal = $('api-key').type === 'password'; $('api-key').type = reveal ? 'text' : 'password';
   $('reveal').textContent = reveal ? 'Hide' : 'Show'; $('reveal').setAttribute('aria-label', reveal ? 'Hide API key' : 'Show API key'); $('reveal').setAttribute('aria-pressed', String(reveal));
 });
-for (const id of ['target-language', 'model-select', 'theme', 'enabled']) $(id).addEventListener('change', () => {
+function markUnsaved() {
   theme(); preview(); $('save-status').className = ''; $('save-status').textContent = 'You have unsaved preferences.';
+}
+for (const id of ['target-language', 'model-select', 'theme', 'enabled']) $(id).addEventListener('change', markUnsaved);
+$('translation-instructions').addEventListener('input', markUnsaved);
+$('reset-instructions').addEventListener('click', () => {
+  $('translation-instructions').value = DEFAULT_INSTRUCTIONS;
+  markUnsaved();
+  $('save-status').textContent = 'Default instructions restored. Choose Save preferences to apply them.';
 });
 media.addEventListener('change', theme);
 const observer = new IntersectionObserver(entries => {

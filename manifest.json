@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "MetaFrasi",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Translate selected text or read a translated summary with your own Google Gemini API key.",
   "minimum_chrome_version": "112",
   "permissions": ["storage"],

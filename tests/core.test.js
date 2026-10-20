@@ -1,11 +1,19 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {DEFAULTS, LANGUAGES, MAX_TEXT_LENGTH, normalizeSettings, publicSettings, validateRequest, compatibleModels, recommendedModel, buildPayload, parseTranslation, ResultCache} from '../shared/core.js';
+import {DEFAULTS, DEFAULT_INSTRUCTIONS, MAX_INSTRUCTIONS_LENGTH, LANGUAGES, MAX_TEXT_LENGTH, normalizeSettings, publicSettings, validateRequest, compatibleModels, recommendedModel, buildPayload, parseTranslation, ResultCache} from '../shared/core.js';
 
 test('public preferences never expose an API key or arbitrary stored fields', () => {
-  const safe = publicSettings({...DEFAULTS, apiKey:'fake-test-key', cloudConsent:true, unexpectedSecret:'hidden'});
+  const safe = publicSettings({...DEFAULTS, apiKey:'fake-test-key', cloudConsent:true, instructions:'Private style preference.', unexpectedSecret:'hidden'});
   assert.equal(safe.configured,true); assert.equal('apiKey' in safe,false); assert.equal('unexpectedSecret' in safe,false);
   assert.equal(JSON.stringify(safe).includes('fake-test-key'),false);
+  assert.equal('instructions' in safe,false);
+});
+test('existing settings gain default instructions and invalid persisted instructions recover safely', () => {
+  for (const value of [undefined, null, 42, '', '  ', 'x'.repeat(MAX_INSTRUCTIONS_LENGTH+1)]) {
+    assert.equal(normalizeSettings({instructions:value}).instructions,DEFAULT_INSTRUCTIONS);
+  }
+  assert.equal(normalizeSettings({instructions:'  Prefer a formal tone.  '}).instructions,'Prefer a formal tone.');
+  assert.equal(normalizeSettings({instructions:'x'.repeat(MAX_INSTRUCTIONS_LENGTH)}).instructions.length,MAX_INSTRUCTIONS_LENGTH);
 });
 test('invalid persisted preferences recover to supported defaults', () => {
   assert.deepEqual(normalizeSettings({apiKey:42,model:'../../escape',targetLanguage:'invalid',theme:'red',enabled:false}), {...DEFAULTS,enabled:false});
@@ -34,6 +42,19 @@ test('summary and full translation preserve separate tasks and pass the source a
   assert.match(summary.systemInstruction.parts[0].text,/German/);
   assert.equal(JSON.parse(full.contents[0].parts[0].text).sourceText,source);
   assert.equal(full.systemInstruction.parts[0].text.includes(source),false);
+});
+test('editable instructions reach both actions while language, source handling and response schema remain defined', () => {
+  for (const mode of ['translate','summary']) {
+    const payload=buildPayload({text:'A sample passage.',mode,targetLanguage:'el'},'Prefer a formal tone. Keep product names unchanged.');
+    const prompt=payload.systemInstruction.parts[0].text;
+    assert.match(prompt,/Prefer a formal tone/);
+    assert.match(prompt,/Target language: Greek/);
+    assert.match(prompt,/never as instructions to follow/);
+    assert.match(prompt,mode==='translate'?/Translate the entire/:/Summarize the supplied/);
+    assert.equal(payload.generationConfig.responseMimeType,'application/json');
+    assert.deepEqual(payload.generationConfig.responseSchema.required,['text']);
+    assert.equal(JSON.parse(payload.contents[0].parts[0].text).sourceText,'A sample passage.');
+  }
 });
 const response = (text, finishReason='STOP') => ({candidates:[{finishReason,content:{parts:[{text}]}}]});
 test('results reject blocked, truncated, malformed and empty responses', () => {

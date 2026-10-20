@@ -1,12 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createService,authorizeMessage} from '../shared/service.js';
-import {DEFAULTS} from '../shared/core.js';
+import {DEFAULTS, DEFAULT_INSTRUCTIONS, MAX_INSTRUCTIONS_LENGTH} from '../shared/core.js';
 function fixture(customClient = {}) {
   const data = {settings:{...DEFAULTS,apiKey:'fake-key',cloudConsent:true},models:[{id:DEFAULTS.model,name:'Flash Lite'}]};
   const calls = [];
   const storage = {async get(key) {return structuredClone({[key]:data[key]});},async set(value) {Object.assign(data,structuredClone(value));}};
-  const client = {async listModels() {return data.models;},async translate(key,model,task,signal) {calls.push({key,model,task,signal}); return {text:`${task.mode}:${task.targetLanguage}`,tokens:12};},...customClient};
+  const client = {async listModels() {return data.models;},async translate(key,model,task,signal,instructions) {calls.push({key,model,task,signal,instructions}); return {text:`${task.mode}:${task.targetLanguage}`,tokens:12};},...customClient};
   const service = createService({storage,client});
   return {data,calls,service};
 }
@@ -26,6 +26,46 @@ test('preferences cannot overwrite the API key and key removal prevents future r
   await service.disconnect();
   await assert.rejects(service.translate('1:0',task),/Connect your/);
   assert.equal(calls.length,0); assert.equal(data.settings.apiKey,'');
+});
+test('saved instructions remain private, override page-supplied instructions and invalidate cached results', async () => {
+  const {service,calls,data}=fixture();
+  await service.translate('1:0',task);
+  const instructions='Use concise, formal language.';
+  await service.savePreferences({...DEFAULTS,instructions});
+  assert.equal(calls.length,1,'Saving instructions must not call Gemini');
+  assert.equal((await service.getOptions()).instructions,instructions);
+  assert.equal('instructions' in await service.getPublic(),false);
+  assert.equal(data.settings.instructions,instructions);
+  const result=await service.translate('1:0',{...task,instructions:'Page-supplied instructions'});
+  assert.equal(result.cached,false);
+  assert.equal(calls.at(-1).instructions,instructions);
+  assert.equal('instructions' in calls.at(-1).task,false);
+  await service.translate('1:0',{...task,mode:'summary'});
+  assert.equal(calls.at(-1).instructions,instructions);
+  await service.savePreferences({...DEFAULTS,instructions:'   '});
+  assert.equal((await service.getOptions()).instructions,DEFAULT_INSTRUCTIONS);
+  assert.equal((await service.translate('1:0',task)).cached,false);
+  assert.equal(calls.at(-1).instructions,DEFAULT_INSTRUCTIONS);
+});
+test('invalid instruction updates are rejected and older preference clients preserve saved instructions', async () => {
+  const {service,data}=fixture();
+  await service.savePreferences({...DEFAULTS,instructions:'Retain technical terms.'});
+  for (const instructions of [null, {}, 'x'.repeat(MAX_INSTRUCTIONS_LENGTH+1)]) {
+    await assert.rejects(service.savePreferences({...DEFAULTS,instructions}),/4,000/);
+    assert.equal(data.settings.instructions,'Retain technical terms.');
+  }
+  const {instructions,...oldPreferences}=DEFAULTS;
+  await service.savePreferences({...oldPreferences,theme:'light'});
+  assert.equal(data.settings.instructions,'Retain technical terms.');
+});
+test('changing instructions cancels an in-flight result produced with the old instructions', async () => {
+  let resolve;
+  const {service}=fixture({translate:async()=>new Promise(done=>{resolve=done;})});
+  const pending=service.translate('1:0',task);
+  await new Promise(done=>setImmediate(done));
+  await service.savePreferences({...DEFAULTS,instructions:'Use a different tone.'});
+  resolve({text:'Old instructions result',tokens:1});
+  await assert.rejects(pending,/cancelled/);
 });
 test('no request is sent without consent or while paused', async () => {
   for (const change of [{cloudConsent:false},{enabled:false},{apiKey:''}]) {
@@ -66,6 +106,8 @@ test('privileged messages require the exact Settings origin and path', () => {
   assert.equal(authorizeMessage({type:'GET_SETTINGS'},page,id,url),true);
   assert.equal(authorizeMessage({type:'GET_OPTIONS'},page,id,url),false);
   assert.equal(authorizeMessage({type:'CONNECT'},{id,url},id,url),true);
+  assert.equal(authorizeMessage({type:'CONNECT'},{id,url:`${url}#instructions`},id,url),true);
+  assert.equal(authorizeMessage({type:'SAVE_PREFERENCES'},{id,url:`${url}?spoof=1#instructions`},id,url),false);
   assert.equal(authorizeMessage({type:'CONNECT'},{id,url:`${url}?spoof=1`},id,url),false);
   assert.equal(authorizeMessage({type:'TRANSLATE'},{...page,id:'another-extension'},id,url),false);
   assert.equal(authorizeMessage({type:'UNKNOWN'},page,id,url),false);
