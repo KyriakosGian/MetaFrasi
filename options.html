@@ -11,7 +11,7 @@
     <nav aria-label="Settings sections">
       <a href="#api" class="active">API Configuration</a><a href="#model">AI Model</a><a href="#translation">Translation</a><a href="#instructions">Translation Instructions</a><a href="#appearance">Appearance</a><a href="#privacy">Privacy &amp; Data</a>
     </nav>
-    <div class="credits">Created by <a href="https://github.com/KyriakosGian" target="_blank" rel="noreferrer">KyriakosGian</a><br><a href="https://procreta.gr" target="_blank" rel="noreferrer">ProCreta.gr</a><span id="version">v0.1.3</span></div>
+    <div class="credits">Created by <a href="https://github.com/KyriakosGian" target="_blank" rel="noreferrer">KyriakosGian</a><br><a href="https://procreta.gr" target="_blank" rel="noreferrer">ProCreta.gr</a><span id="version">v0.1.4</span></div>
   </aside>
   <main>
     <header class="page-header"><div><p class="eyebrow">YOUR WORDS. YOUR LANGUAGE.</p><h1>Make reading feel familiar.</h1><p>Connect once. Select text anywhere you read. Translate when you need it.</p></div><span class="pill">Chrome extension</span></header>
@@ -19,6 +19,8 @@
     <section id="api" class="card" aria-labelledby="api-title">
       <span class="card-icon" aria-hidden="true">⌘</span><div class="card-content">
         <h2 id="api-title">Google Gemini API Key</h2><p>MetaFrasi connects directly to Google. There is no MetaFrasi server between you and your translation.</p>
+        <div class="key-summary" id="key-summary" role="status" aria-live="polite"><strong id="key-summary-title">Checking saved settings…</strong><span id="key-summary-detail"></span></div>
+        <p class="field-note">For adults using Gemini for professional or business purposes. Google requires Paid Services for API clients offered in the EEA, Switzerland and the UK. <a href="https://ai.google.dev/gemini-api/terms" target="_blank" rel="noreferrer">Google API terms</a></p>
         <details class="guide"><summary>New here? Get your API key in three steps</summary><ol>
           <li>Open <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer">Google AI Studio</a> and sign in to your Google account.</li>
           <li>Create an API key for a Google project. To use the free tier, choose an eligible project without paid billing. Check availability and limits in AI Studio.</li>
@@ -40,7 +42,7 @@
         <h2 id="model-title">AI Model</h2><p>Start with the recommended Flash-Lite model, or choose another text model listed for your key.</p>
         <label for="model-select">MODEL</label><select id="model-select" required><option value="gemini-3.5-flash-lite">Gemini 3.5 Flash-Lite (recommended)</option></select>
         <p id="model-state" class="field-note">Connect your key to discover available models.</p>
-        <div class="callout"><strong>Model guide:</strong> Flash-Lite is the suggested starting point for short translations. Other models may take longer or require paid access. To refresh the list, use Connect &amp; save key above.</div>
+        <div class="callout"><strong>Model guide:</strong> Flash-Lite is the suggested starting point for short translations. Other models may take longer or require paid access. To refresh the list, use Check saved key above.</div>
       </div></section>
       <section id="translation" class="card" aria-labelledby="translation-title"><span class="card-icon" aria-hidden="true">◎</span><div class="card-content">
         <h2 id="translation-title">Translation</h2><p>Choose your native language, or the language you prefer to read in.</p>
@@ -68,6 +70,6 @@
       <button type="button" id="clear-cache" class="secondary">Clear temporary results</button><p id="cache-status" role="status" aria-live="polite"></p>
       <p class="field-note"><a href="docs/privacy.html" target="_blank">Privacy Policy</a> · <a href="https://github.com/KyriakosGian/MetaFrasi/issues" target="_blank" rel="noreferrer">Report a problem</a></p>
     </div></section>
-    <footer>MetaFrasi <span id="footer-version">0.1.3</span> · Free, open-source software · MIT License</footer>
+    <footer>MetaFrasi <span id="footer-version">0.1.4</span> · Free, open-source software · MIT License</footer>
   </main>
 </body></html>

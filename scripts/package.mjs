@@ -7,15 +7,18 @@ import {createHash} from 'node:crypto';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const {version} = JSON.parse(fs.readFileSync(path.join(root, 'manifest.json'), 'utf8'));
 if (!/^\d+\.\d+\.\d+$/.test(version)) throw new Error('Invalid release version.');
-const files = ['manifest.json','background.js','content.js','selection.js','options.html','options.js','options.css','LICENSE'];
-function include(directory) {
-  for (const entry of fs.readdirSync(path.join(root, directory), {withFileTypes:true})) {
-    if (entry.isSymbolicLink()) throw new Error('Symbolic links are not allowed in release files.');
-    const relative = directory + '/' + entry.name;
-    if (entry.isDirectory()) include(relative); else files.push(relative);
+const files = ['manifest.json','background.js','content.js','selection.js','options.html','options.js','options.css','LICENSE',
+  'shared/core.js','shared/gemini.js','shared/service.js',
+  'icons/icon16.png','icons/icon32.png','icons/icon48.png','icons/icon128.png','icons/logo.svg',
+  'docs/privacy.html','docs/support.html','docs/index.html','docs/site.css','docs/site.js','docs/assets/logo.svg'];
+for (const file of files) {
+  let checkedPath = root;
+  for (const segment of file.split('/')) {
+    checkedPath = path.join(checkedPath, segment);
+    if (fs.lstatSync(checkedPath).isSymbolicLink()) throw new Error(`Symbolic links are not allowed in release files: ${file}`);
   }
+  if (!fs.lstatSync(path.join(root, file)).isFile()) throw new Error(`Expected a regular runtime file: ${file}`);
 }
-for (const directory of ['shared','icons','docs']) include(directory);
 const table = Array.from({length:256}, (_, n) => {
   let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0;
 });

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.4 - 2026-10-21
+
+- Keep the saved API key status visible after reopening Settings, distinguish paused translation and unsaved replacement keys, and provide an explicit Check saved key action.
+- Preserve an unsaved replacement when saving preferences, and retain the previous saved key if replacement validation fails.
+- Prevent delayed key checks from restoring a removed key or overwriting newer preferences.
+- Handle an unexpected null model response with a readable error.
+- Add Store screenshots, promotional artwork, README images and submission instructions.
+- Clarify Google's age, professional-use and regional billing requirements.
+- Extend mocked browser checks and keep promotional assets outside the extension ZIP.
+
 ## 0.1.3 - 2026-10-20
 
 - Add editable Translation Instructions in Settings, with a visible default and Reset to default.

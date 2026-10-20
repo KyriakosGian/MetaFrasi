@@ -24,9 +24,12 @@ export function createService({storage, client, now = Date.now}) {
     },
     async connect({apiKey, cloudConsent}) {
       if (cloudConsent !== true) throw new Error('Confirm that selected text may be sent to Google before connecting.');
+      const startedRevision = revision;
+      if (updating) throw new Error('Settings are being saved. Try again in a moment.');
       const settings = await read();
       const key = typeof apiKey === 'string' && apiKey.trim() ? apiKey.trim() : settings.apiKey;
       const models = await client.listModels(key);
+      if (updating || startedRevision !== revision) throw new Error('Settings changed while checking the key. Check again to keep your latest preferences.');
       await persist({settings: {...settings, apiKey: key, cloudConsent: true,
         model: models.some(item => item.id === settings.model) ? settings.model : recommendedModel(models)}, models});
       return this.getOptions();

@@ -65,7 +65,7 @@ async function selectPassage(id='passage') {
 async function fixture() {await page.goto(origin+'/tests/fixtures/reading.html');await page.locator('#passage').waitFor();}
 async function config(value) {await worker.evaluate(value=>Object.assign(globalThis.__test,value),value);}
 async function test(name,fn) {
-  try {await config({mode:'success',delay:0});await fixture();await fn();passed++;console.log('PASS '+name);}
+  try {await config({mode:'success',delay:0,modelsStatus:200,output:null});await fixture();await fn();passed++;console.log('PASS '+name);}
   catch(error){failures++;console.error('FAIL '+name+': '+error.message);await page.screenshot({path:path.join(artifacts,`failure-${failures}.png`)}).catch(()=>{});}
 }
 try {
@@ -85,6 +85,7 @@ try {
     globalThis.fetch=async(url,options={})=>{
       if(!String(url).startsWith('https://generativelanguage.googleapis.com/'))throw new Error('Unexpected external request');
       const state=globalThis.__test;state.calls.push({url:String(url),body:options.body||'',hasKey:Boolean(options.headers?.['x-goog-api-key'])});
+      if(String(url).includes('/models?') && state.modelsStatus && state.modelsStatus!==200)return new Response('{}',{status:state.modelsStatus});
       if(String(url).includes('/models?'))return new Response(JSON.stringify({models:[
         {name:'models/gemini-3.5-flash-lite',displayName:'Gemini 3.5 Flash-Lite',supportedGenerationMethods:['generateContent']},
         {name:'models/gemini-3.8-flash',displayName:'Gemini 3.8 Flash',supportedGenerationMethods:['generateContent']},
@@ -94,9 +95,11 @@ try {
         const timer=setTimeout(resolve,state.delay);options.signal?.addEventListener('abort',()=>{clearTimeout(timer);reject(new DOMException('Aborted','AbortError'));},{once:true});
       });
       if(state.mode==='quota')return new Response('{}',{status:429});
+      if(state.mode==='denied')return new Response('{}',{status:403});
+      if(state.mode==='missing')return new Response('{}',{status:404});
       const prompt=JSON.parse(options.body).systemInstruction.parts[0].text;
       const source=JSON.parse(JSON.parse(options.body).contents[0].parts[0].text).sourceText;
-      const text=state.mode==='echo'?source:state.mode==='html'?'<img src=x onerror=alert(1)>':prompt.includes('Summarize the supplied')?'Eine kurze Zusammenfassung in der Zielsprache.':'Η ανάγνωση αναδεικνύει νέες ιδέες. Η μετάφραση διατηρεί το νόημα και τις σημαντικές λεπτομέρειες.';
+      const text=state.output??(state.mode==='echo'?source:state.mode==='html'?'<img src=x onerror=alert(1)>':prompt.includes('Summarize the supplied')?'Eine kurze Zusammenfassung in der Zielsprache.':'Η ανάγνωση αναδεικνύει νέες ιδέες. Η μετάφραση διατηρεί το νόημα και τις σημαντικές λεπτομέρειες.');
       return new Response(JSON.stringify({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({text})}]}}],usageMetadata:{totalTokenCount:30}}),{status:200});
     };
   });
@@ -109,6 +112,35 @@ try {
   await options.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
   await options.screenshot({path:path.join(artifacts,'settings-dark.png')});
   page=await context.newPage();cdp=await context.newCDPSession(page);
+  await test('saved-key status survives reload and distinguishes checking, replacement, pause and removal',async()=>{
+    const calls=await worker.evaluate(()=>__test.calls.length);
+    await options.reload();await options.getByText('API key saved',{exact:true}).waitFor();
+    assert.equal(await options.locator('#key-summary-detail').textContent(),'Enabled for translation requests.');
+    assert.equal(await options.locator('#api-key').inputValue(),'');
+    assert.equal(await options.locator('#connect').textContent(),'Check saved key');
+    assert.equal(await worker.evaluate(()=>__test.calls.length),calls,'Opening Settings must not call Google');
+    await options.locator('#api-key').fill('fake-replacement-key');
+    assert.match(await options.locator('#key-state').textContent(),/Replacement key not saved/);
+    await options.locator('#enabled').uncheck();await options.locator('#save').click();
+    await options.getByText('Preferences saved. Select a new passage to use them.').waitFor();
+    assert.equal(await options.locator('#api-key').inputValue(),'fake-replacement-key');
+    assert.match(await options.locator('#key-summary-detail').textContent(),/paused/);
+    assert.equal(await worker.evaluate(async()=>(await chrome.storage.local.get('settings')).settings.apiKey),'fake-browser-test-key');
+    await config({modelsStatus:403});await options.locator('#connect').click();
+    await options.getByText(/Google denied access/).waitFor();
+    assert.equal(await worker.evaluate(async()=>(await chrome.storage.local.get('settings')).settings.apiKey),'fake-browser-test-key');
+    await options.locator('#api-key').fill('');await options.locator('#connect').click();
+    await options.getByText('The saved key could not be verified. Review the message below and check again.').waitFor();
+    await config({modelsStatus:200});await options.locator('#connect').click();
+    await options.getByText('Key accepted by Google and saved. Your model list is ready.').waitFor();
+    assert.equal(await options.locator('#key-summary').getAttribute('data-state'),'idle');
+    await options.locator('#enabled').check();await options.locator('#save').click();
+    await options.getByText('Enabled for translation requests.').waitFor();
+    await options.locator('#disconnect').click();await options.getByText('No API key saved',{exact:true}).waitFor();
+    assert.equal(await options.locator('#connect').textContent(),'Connect & save key');
+    await options.locator('#api-key').fill('fake-browser-test-key');await options.locator('#consent').check();await options.locator('#connect').click();
+    await options.getByText('Key accepted by Google and saved. Your model list is ready.').waitFor();
+  });
   await test('double-click shows Translate without sending a translation request',async()=>{
     const before=await worker.evaluate(()=>__test.calls.length);
     await page.locator('#passage').dblclick({position:{x:35,y:16}});
@@ -266,6 +298,15 @@ try {
     await config({delay:1500});await selectPassage('bottom');await click('#translate');await page.keyboard.press('Escape');
     await new Promise(resolve=>setTimeout(resolve,1600));assert.equal(await ui(':host',function(){return this.hidden;}),true);
   });
+  await test('revoked keys and unavailable models display actionable errors without retries',async()=>{
+    for(const [mode,message] of [['denied','Google denied access'],['missing','model is no longer available']]) {
+      await options.evaluate(()=>chrome.runtime.sendMessage({type:'CLEAR_CACHE'}));
+      await config({mode});await selectPassage('second');const before=await worker.evaluate(()=>__test.calls.length);
+      await click('#translate');await poll(()=>ui('#output',function(message){return this.textContent.includes(message);},message),'Missing API error');
+      assert.equal(await worker.evaluate(()=>__test.calls.length),before+1);
+      assert.equal(await ui('#setup',function(){return this.hidden;}),false);await page.keyboard.press('Escape');
+    }
+  });
   await test('overlay remains inside a narrow viewport',async()=>{
     await page.setViewportSize({width:420,height:720});await selectPassage();await click('#translate');
     await poll(()=>ui('#copy',function(){return !this.hidden;}),'Missing result');
@@ -328,6 +369,26 @@ try {
   await options.locator('#theme').selectOption('light');await options.locator('#save').click();
   await options.evaluate(()=>window.scrollTo({top:0,behavior:'instant'}));
   await options.screenshot({path:path.join(artifacts,'settings-light.png')});
+  await test('store screenshots show the actual extension with neutral sample content',async()=>{
+    await options.locator('#theme').selectOption('dark');await options.locator('#target-language').selectOption('en');await options.locator('#save').click();
+    await options.getByText('Preferences saved. Select a new passage to use them.').waitFor();
+    await options.setViewportSize({width:1280,height:800});await options.evaluate(()=>window.scrollTo({top:140,behavior:'instant'}));
+    await options.screenshot({path:path.join(artifacts,'store-settings.png')});
+    await page.setViewportSize({width:1280,height:800});await page.goto(origin+'/tests/fixtures/showcase.html');
+    await config({output:'• Read the document once to understand the main idea.\n• Translate unfamiliar passages and retain important details.\n• Use a summary to review the key points.'});
+    await selectPassage();await click('#translate');await poll(()=>ui('#copy',function(){return !this.hidden;}),'Missing screenshot translation');
+    let bounds=await rect();await drag('#move',700-bounds.left,240-bounds.top);
+    await page.screenshot({path:path.join(artifacts,'store-translation.png')});
+    await page.keyboard.press('Escape');await config({output:'• Read for context.\n• Translate difficult passages.\n• Summarize the key points.'});
+    await selectPassage();await click('#expand');await click('#summarize');await poll(()=>ui('#copy',function(){return !this.hidden;}),'Missing screenshot summary');
+    bounds=await rect();await drag('#move',700-bounds.left,240-bounds.top);
+    await page.screenshot({path:path.join(artifacts,'store-summary.png')});
+    const promo=await context.newPage();await promo.setViewportSize({width:440,height:280});await promo.goto(origin+'/store-assets/promo-small.svg');
+    await promo.screenshot({path:path.join(artifacts,'promo-small.png')});await promo.close();
+    const icon=await context.newPage();await icon.setViewportSize({width:128,height:128});await icon.goto(origin+'/icons/logo.svg');
+    await icon.screenshot({path:path.join(artifacts,'icon128.png'),omitBackground:true});await icon.close();
+    if(process.env.METAFRASI_TYPEPILOT)assert.ok((await Promise.all(context.serviceWorkers().map(item=>item.evaluate(()=>chrome.runtime.getManifest().name)))).some(name=>name.includes('TypePilot')),'TypePilot must also be loaded');
+  });
   assert.deepEqual(errors,[],'Unexpected page errors');
   console.log(`Browser checks: ${passed} passed, ${failures} failed. All Gemini responses were mocked.`);
   fs.writeFileSync(path.join(artifacts,'browser-results.json'),JSON.stringify({passed,failures,errors,liveGeminiTested:false},null,2));

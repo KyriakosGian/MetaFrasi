@@ -100,6 +100,21 @@ test('changing a key discards a late response from the previous key', async () =
   await service.connect({apiKey:'new-fake-key',cloudConsent:true});
   resolve({text:'old-account result',tokens:1}); await assert.rejects(pending,/cancelled/);
 });
+
+test('a delayed key check cannot undo key removal or overwrite newer preferences', async () => {
+  for (const action of ['disconnect', 'preferences']) {
+    let finish;
+    const {service, data} = fixture({listModels: () => new Promise(resolve => {finish = resolve;})});
+    const pending = service.connect({apiKey: 'replacement-fake-key', cloudConsent: true});
+    await new Promise(resolve => setImmediate(resolve));
+    if (action === 'disconnect') await service.disconnect();
+    else await service.savePreferences({...DEFAULTS, targetLanguage: 'de'});
+    finish([{id: DEFAULTS.model, name: 'Flash Lite'}]);
+    await assert.rejects(pending, /Settings changed while checking/);
+    assert.equal(data.settings.apiKey, action === 'disconnect' ? '' : 'fake-key');
+    if (action === 'preferences') assert.equal(data.settings.targetLanguage, 'de');
+  }
+});
 test('privileged messages require the exact Settings origin and path', () => {
   const id='extension-id', url=`chrome-extension://${id}/options.html`;
   const page={id,url:'https://example.test',tab:{id:1},frameId:0};

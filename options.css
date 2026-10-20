@@ -40,6 +40,12 @@ textarea { display:block; min-height:180px; resize:vertical; }
 .field-heading label { margin:0; }
 .text-button { color:var(--purple); background:transparent; padding:3px 0; font-size:12px; }
 .key-field { display:flex; position:relative; }
+.key-summary { display:grid; gap:3px; padding:13px 15px; border:1px solid var(--line); border-radius:9px; background:var(--input); margin:18px 0 12px; }
+.key-summary strong { font-size:14px; }
+.key-summary span { color:var(--muted); font-size:12px; }
+.key-summary[data-state="ready"] { border-color:var(--good); }
+.key-summary[data-state="ready"] strong { color:var(--good); }
+.key-summary[data-state="failed"] strong { color:var(--bad); }
 .key-field input { padding-right:66px; }
 .key-field button { position:absolute; top:3px; right:3px; padding:8px 10px; color:var(--muted); background:transparent; font-size:12px; }
 .field-note { font-size:12px; margin:8px 0 0; color:var(--muted); }

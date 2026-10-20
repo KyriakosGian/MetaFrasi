@@ -1,4 +1,4 @@
-export const VERSION = '0.1.3';
+export const VERSION = '0.1.4';
 export const MAX_TEXT_LENGTH = 12000;
 export const MAX_INSTRUCTIONS_LENGTH = 4000;
 export const DEFAULT_INSTRUCTIONS = 'You are MetaFrasi, an accurate translation assistant. Use natural, clear wording. Preserve the original meaning, qualifications, names, brands, URLs, numbers and paragraph structure. Preserve bullet points, numbering, nested indentation and line breaks. Keep each source list item separate and in the same order when translating. Do not add explanations or facts.';
@@ -90,7 +90,7 @@ export function parseTranslation(body) {
   const raw = candidate.content?.parts?.filter(part => !part.thought).map(part => part.text || '').join('');
   let parsed;
   try { parsed = JSON.parse(raw); } catch { throw new Error('The model returned an unreadable result. Try another text model in Settings.'); }
-  if (typeof parsed.text !== 'string' || !parsed.text.trim()) throw new Error('The model returned an empty result. Try again.');
+  if (!parsed || typeof parsed.text !== 'string' || !parsed.text.trim()) throw new Error('The model returned an empty result. Try again.');
   if (parsed.text.length > 80000) throw new Error('The model returned too much text. Select a shorter passage.');
   return parsed.text.trim();
 }

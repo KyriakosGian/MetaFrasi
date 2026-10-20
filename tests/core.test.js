@@ -59,6 +59,7 @@ test('editable instructions reach both actions while language, source handling a
 const response = (text, finishReason='STOP') => ({candidates:[{finishReason,content:{parts:[{text}]}}]});
 test('results reject blocked, truncated, malformed and empty responses', () => {
   assert.equal(parseTranslation(response('{"text":"<b>Plain text</b>"}')),'<b>Plain text</b>');
+  assert.throws(() => parseTranslation(response('null')), /empty result/);
   for (const body of [response('{"text":""}'),response('not JSON'),response('{"text":"part"}','MAX_TOKENS'),response('{"text":"part"}','SAFETY'),{promptFeedback:{blockReason:'SAFETY'}}]) assert.throws(() => parseTranslation(body));
 });
 test('cache bounds, least-recently-used eviction, expiry and clearing', () => {

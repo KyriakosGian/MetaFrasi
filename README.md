@@ -2,9 +2,19 @@
 
 Translate the passage you are reading, or get a translated summary. A small, free and open-source Chrome extension using your own Google Gemini API key, with support for [Google's free tier](https://ai.google.dev/gemini-api/docs/pricing) where available.
 
-Version **0.1.3**, testing release. English interface. Manifest V3. No runtime dependencies, developer-operated backend or analytics.
+Version **0.1.4**, testing release. English interface. Manifest V3. No runtime dependencies, developer-operated backend or analytics.
 
 [Website](https://kyriakosgian.github.io/MetaFrasi/) · [Releases](https://github.com/KyriakosGian/MetaFrasi/releases) · [Privacy](docs/privacy.html) · [Support](https://github.com/KyriakosGian/MetaFrasi/issues)
+
+For adults using Gemini for professional or business purposes. Google requires Paid Services for API clients offered in the EEA, Switzerland and the UK. See [Google's API terms](https://ai.google.dev/gemini-api/terms).
+
+## Screenshots
+
+![MetaFrasi translating a selected list into English beside a sample article](store-assets/screenshots/translation.png)
+
+![MetaFrasi Settings with the saved API key status and manual connection check](store-assets/screenshots/settings.png)
+
+Screenshots show the actual extension using neutral sample text and mocked responses. No real API key or personal content is shown. [Translated summary example](store-assets/screenshots/summary.png).
 
 ## Features
 
@@ -17,6 +27,7 @@ Version **0.1.3**, testing release. English interface. Manifest V3. No runtime d
 - Preserve list bullets, numbering and indentation when selecting HTML lists.
 - See elapsed milliseconds, the model and API-reported token usage below each result.
 - Connect your own Gemini key and discover compatible text models.
+- See a persistent saved-key status and check Google access manually without generating a translation.
 - Edit the shared translation and summary instructions in Settings, or restore the default.
 - Choose dark, light or system appearance.
 - Pause the selection control and clear temporary results.
@@ -37,6 +48,8 @@ Chrome Web Store submission is planned after testing. No store listing is availa
 Drag the result title bar to move the window, or its bottom-right corner to resize it. You can also focus either control with Tab and use the arrow keys, with Shift for smaller steps. The chosen size lasts until the page reloads. New selections open beside the selected text, and the window stays within the viewport.
 
 In **Settings → Translation Instructions**, edit the default prompt to adjust wording, tone or terminology. The instructions apply to both Translate and Summarize. Choose **Save preferences** to apply edits or a reset. An empty field uses the default. MetaFrasi still supplies the selected action, target language and JSON response format, so you do not need to add those instructions.
+
+In **API Configuration**, **API key saved** confirms local storage. **Enabled for translation requests** reflects your saved configuration, not a guarantee of Google's current quota. The empty key field is only for a replacement. **Check saved key** validates access and refreshes models. A replacement becomes active only after **Replace & save key** succeeds. Saving other preferences does not save a new key.
 
 ## Google Gemini and cost
 
@@ -79,7 +92,7 @@ node scripts/package.mjs
 node scripts/preview.mjs
 ```
 
-`dist/metafrasi-0.1.3.zip` is an allowlisted extension package. Tests, development scripts and local artifacts are excluded. A SHA-256 file accompanies it.
+`dist/metafrasi-0.1.4.zip` is an allowlisted extension package. Tests, development scripts and local artifacts are excluded. A SHA-256 file accompanies it.
 
 Browser integration tests use Playwright with its Chromium browser in a temporary profile, fake credentials and mocked Gemini responses. They never use your personal Chrome profile or a real API key. Set `METAFRASI_PLAYWRIGHT` to an absolute installed Playwright package directory when it is not locally installed, then run:
 
@@ -101,7 +114,7 @@ Set `METAFRASI_TEST_ARTIFACTS` to a temporary directory to keep generated screen
 
 ## Publishing
 
-Push the repository to `KyriakosGian/MetaFrasi`. In GitHub Settings → Pages, choose **GitHub Actions**. The included Pages workflow publishes `docs/`. CI checks the project and builds an extension ZIP on pushes and pull requests. Tagging `v0.1.3` publishes a GitHub Release with the ZIP and checksum. See [release checklist](store-assets/SUBMISSION.md) before submitting to the Chrome Web Store.
+Push the repository to `KyriakosGian/MetaFrasi`. In GitHub Settings → Pages, choose **GitHub Actions**. The included Pages workflow publishes `docs/`. CI checks the project and builds an extension ZIP on pushes and pull requests. Tagging `v0.1.4` publishes a GitHub Release with the ZIP and checksum. See [release checklist](store-assets/SUBMISSION.md) before submitting to the Chrome Web Store.
 
 ## License and credits
 

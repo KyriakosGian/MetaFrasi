@@ -1,6 +1,6 @@
 # Chrome Web Store draft
 
-Status: draft for testing. Not submitted.
+Status: prepared for version 0.1.4. Not submitted. Final live-user testing is required.
 
 ## Name
 
@@ -16,13 +16,20 @@ Read a word, sentence or passage in your preferred language without leaving the 
 
 MetaFrasi is a small, open-source reading assistant for Chrome. Double-click a word or select a passage to reveal the Translate button. Choose your usual language, try another language for that selection, or request a translated summary.
 
+Intended for adults using Gemini for professional or business purposes. Google requires Paid Services when API clients are offered to users in the EEA, Switzerland and the UK.
+
 FEATURES
 
 - One-click translation into your saved target language.
 - Another target language for the current selection.
 - Summarize and translate longer passages.
 - Original-text reference and copyable results.
+- Move and resize the result window beside your document.
+- Preserve bullets, numbering and paragraph structure.
+- Customize translation and summary instructions in Settings.
+- View elapsed time, model and API-reported tokens.
 - Guided Gemini API key setup and text-model discovery.
+- Clear saved-key status and a manual connection check.
 - Dark, light and system themes.
 - Temporary result caching and a pause control.
 - Editable fields are excluded so writing tools such as TypePilot can coexist.
