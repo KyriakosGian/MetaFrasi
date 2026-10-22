@@ -81,6 +81,16 @@ h2 { font-size:clamp(30px,3.4vw,43px); line-height:1.2; letter-spacing:-.045em; 
 .feature-number { display:inline-block; color:#b7a7ff; background:#7c5cff18; border:1px solid #8c73ff30; border-radius:8px; padding:8px 11px; font-size:10px; font-weight:750; letter-spacing:.07em; }
 h3 { font-size:18px; line-height:1.4; letter-spacing:-.025em; margin:20px 0 10px; font-weight:700; }
 .features p { color:var(--muted); font-size:13px; line-height:1.85; margin:0; }
+.name-story { display:grid; grid-template-columns:.8fr 1.2fr; gap:48px; align-items:center; padding:38px; margin-bottom:90px; border:1px solid var(--line); border-radius:20px; background:linear-gradient(120deg,#221b3b,#0d142b); }
+.name-origin .eyebrow { margin-bottom:12px; }
+.name-origin h2 { font-size:32px; }
+.greek-word { display:block; color:var(--accent); font-size:clamp(30px,3.5vw,44px); font-weight:650; letter-spacing:-.035em; }
+.word-meaning { display:block; margin-top:5px; color:var(--muted); font-size:12px; }
+.name-copy p { color:var(--muted); font-size:14px; line-height:1.9; margin:0 0 16px; }
+.name-copy em { color:var(--text); font-style:normal; }
+.name-copy .name-purpose { color:var(--text); font-weight:600; margin-bottom:0; }
+@media(max-width:850px) { .name-story { grid-template-columns:1fr; gap:24px; margin-bottom:65px; } }
+@media(max-width:560px) { .name-story { padding:26px 23px; } .name-origin h2 { font-size:28px; } }
 .section-soft,.setup-section { background:#0b0e25; border-block:1px solid var(--line); }
 .setup-section { padding-block:75px; }
 .setup-grid { display:grid; grid-template-columns:1fr 1fr; gap:90px; align-items:center; }

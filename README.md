@@ -116,6 +116,14 @@ Set `METAFRASI_TEST_ARTIFACTS` to a temporary directory to keep generated screen
 
 Push the repository to `KyriakosGian/MetaFrasi`. In GitHub Settings → Pages, choose **GitHub Actions**. The included Pages workflow publishes `docs/`. CI checks the project and builds an extension ZIP on pushes and pull requests. Tagging `v0.1.4` publishes a GitHub Release with the ZIP and checksum. See [release checklist](store-assets/SUBMISSION.md) before submitting to the Chrome Web Store.
 
+## Behind the name
+
+MetaFrasi takes its name from μετάφραση, the Greek word for translation. For Greek speakers, the name already describes what the extension does. For everyone else, it carries a small story.
+
+There is a playful second reading: meta suggests “beyond,” while frasi means “phrase.” It reflects the idea behind MetaFrasi: understanding the meaning behind unfamiliar words, in the language you prefer.
+
+A Greek name for a simple purpose: helping you understand what you read.
+
 ## License and credits
 
 [MIT](LICENSE). Created by [KyriakosGian](https://github.com/KyriakosGian). Part of the same collection of tools as [TypePilot](https://github.com/KyriakosGian/TypePilot) and [Tabel](https://github.com/KyriakosGian/Tabel). Visual direction follows TypePilot's dark settings interface.
